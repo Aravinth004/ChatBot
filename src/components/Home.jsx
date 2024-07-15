@@ -5,6 +5,10 @@ import { BiLike, BiDislike } from "react-icons/bi";
 // import { BiDislike } from "react-icons/bi";
 // require("dotenv").config()
 
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const genAI = new GoogleGenerativeAI("AIzaSyBchNPDBj588XFPF0lxsB4NdqT7wVbyxAE")
+
+
 const Home = () => {
   const textAreaRef = useRef(null);
   const [val, setVal] = useState("");
@@ -15,24 +19,26 @@ const Home = () => {
   const [bot_answer, setbot_answer ] = useState("")
   const [show, setshow]= useState(false)
 
+
   const handleChange = (event) => {
     setVal(event.target.value)
     }
   const sendquestion = (event)=>{
-    console.log(event.target.value);
+    console.log(event.target.value); 
   }
 // let x = 0
   useEffect(()=>{
-    console.log(bot_answer)
+    console.log(chathistory)
     if(bot_answer!=""){
-      setchathistory( [...chathistory,{
-        role:"user",
-        parts: [{ text: val }],
-      },{
-        role:"model",
-        parts: [{ text: bot_answer }],
-      },
-    ])
+    //   setchathistory( [...chathistory,{
+    //     role:"user",
+    //     parts: [{ text: val }],
+    //   },{
+    //     role:"model",
+    //     parts: [{ text: bot_answer }],
+    //   },
+    // ])
+    console.log("123");
   setVal("")
     }
   },[bot_answer])
@@ -47,8 +53,8 @@ const Home = () => {
       sethide_search_result("none")
     }
     console.log("chatHistory",chathistory);
-    console.log(chathistory[1]?.parts[0]?.text);
-  },[chathistory])
+    // console.log(chathistory[1]?.parts[0]?.text);
+  },[chathistory,bot_answer])
   
   useEffect(() => {
     textAreaRef.current.style.height = "45px"
@@ -99,19 +105,42 @@ const Home = () => {
     try{
       console.log("in");
       console.log(chathistory);
-      console.log(val);
+      // console.log(val);
 
-      const options = {
-        method : "POST",
-        body : JSON.stringify({
-          history : chathistory,
-          message : val
-        }),
-        headers: { "content-type": "application/json" },
-      }
-      const response = await fetch('http://localhost:8000/gemini', options)
+      // -----------------------------
+      async function run() {
+        
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
       
-      response.text().then((res)=> {setbot_answer(res)}).then().catch((error)=>{console.log(error);})
+        const chat = model.startChat({
+          history: chathistory
+          
+        });
+      
+        const msg = val;
+      
+        const result = await chat.sendMessage(msg);
+        const response = await result.response;
+        const text = response.text();
+        console.log(text,"wos");
+        setbot_answer(text)
+        console.log(chathistory);
+      }
+      
+      run();
+      // -------------------------------
+
+      // const options = {
+      //   method : "POST",
+      //   body : JSON.stringify({
+      //     history : chathistory,
+      //     message : val
+      //   }),
+      //   headers: { "content-type": "application/json" },
+      // }
+      // const response = await fetch('http://localhost:8000/gemini', options)
+      
+      // response.text().then((res)=> {setbot_answer(res)}).then().catch((error)=>{console.log(error);})
 
     }catch{
 
